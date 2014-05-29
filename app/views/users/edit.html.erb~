@@ -1,0 +1,2 @@
+<% provide(:title, "Edit user") %>
+<h1>Update your Profile</h1>
