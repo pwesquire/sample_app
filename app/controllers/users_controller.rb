@@ -2,13 +2,15 @@ class UsersController < ApplicationController
   before_action :signed_in_user, only: [:edit, :update, :index, :destroy]
   before_action :correct_user,   only: [:edit, :update]
   before_action :admin_user,     only: :destroy
-  
+  before_action :already_signed_in, only: [:new, :create]
+
   def new
     @user = User.new
   end
 
   def show
     @user = User.find(params[:id])
+    @microposts = @user.microposts.paginate(page: params[:page])
   end
 
   def create
@@ -40,24 +42,27 @@ class UsersController < ApplicationController
   end
 
   def destroy
-    User.find(params[:id]).destroy
-    flash[:success] = "User deleted."
-    redirect_to users_url
+    @user = User.find(params[:id])
+    if current_user?(@user)
+      redirect_to users_path, notice: "You cannot delete yourself."
+    else
+      @user.destroy 
+      flash[:success] = "User deleted."
+      redirect_to users_url
+    end
   end
 
   private
 
     def user_params
-      params.require(:user).permit(:name, :email, :password, :password_confirmation)
+      params.require(:user).permit(:name, :email, :password, 
+                                   :password_confirmation)
     end
 
     # Before filters
 
-    def signed_in_user
-      unless signed_in?
-        store_location
-        redirect_to signin_url, notice: "Please sign in."
-      end
+    def already_signed_in
+      redirect_to root_path, notice: "Already signed in" if signed_in?
     end
 
     def correct_user
